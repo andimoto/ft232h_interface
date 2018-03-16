@@ -1,0 +1,65 @@
+device:
+  name: "FT232H_test"
+  # vid: "0x0403"
+  # pid: "0x6014"
+  serialNo: "RI17034-tty"
+  loopRate: 30
+
+# Configuration of utilized pins. Values written as strings for verbosity
+# pin0:
+#   topic: "pump"
+#   direction: "output"
+#   initialState: "off"
+#
+# pin1:
+#   topic: "valve"
+#   direction: "output"
+#   initialState: "off"
+#
+# pin2:
+#   topic: "contactSwitch"
+#   direction: "input"
+#   pubType: "change"     #alternative: continuous publishing
+
+pins: [
+  {
+    topic: "/pin0",
+    direction: "output",
+    initialState: "off"
+  },
+  {
+    topic: "/pin1",
+    direction: "output",
+    initialState: "off"
+  },
+  {
+    topic: "/pin2",
+    direction: "output",
+    initialState: "off"
+  },
+  {
+    topic: "/pin3",
+    direction: "output",
+    initialState: "off"
+  },
+  {
+    topic: "/pin4",
+    direction: "output",
+    initialState: "off"
+  },
+  {
+    topic: "/pin5",
+    direction: "output",
+    initialState: "off"
+  },
+  {
+    topic: "/pin6",
+    direction: "output",
+    initialState: "off"
+  },
+  {
+    topic: "/pin7",
+    direction: "output",
+    initialState: "off"
+  },
+]

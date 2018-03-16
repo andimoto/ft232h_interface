@@ -1,0 +1,21 @@
+device:
+  name: "FT232H"
+  serialNo: "RI17034-tty"
+  loopRate: 30
+pins: [
+  {
+    topic: "/pump",
+    direction: "output",
+    initialState: "off"
+  },
+  {
+    topic: "/valve",
+    direction: "output",
+    initialState: "off"
+  },
+  {
+    topic: "/contactSwitch",
+    direction: "input",
+    type: "continuous"     #NOT IMPLEMENTED - rate of publication, publish with loopRate. Alternatively publish only on pin state change with *stateChange*
+  }
+]

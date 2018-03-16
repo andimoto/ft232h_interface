@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>ft232h_interface</name>
+  <version>0.0.0</version>
+  <description>Interface for the FT232H GPIO</description>
+
+  <maintainer email="stefan.lochbrunner@tum.de">Stefan Lochhbrunner</maintainer>
+
+  <license>TODO</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>rospy</build_depend>
+  <!-- <build_depend>libftdi1</build_depend> -->
+  <build_depend>rostest</build_depend>
+  <build_depend>libftdi-dev</build_depend>
+
+  <exec_depend>rospy</exec_depend>
+  <exec_depend>libftdi-dev</exec_depend>
+
+</package>

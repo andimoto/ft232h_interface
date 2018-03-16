@@ -1,0 +1,11 @@
+<launch>
+	<!-- doc ROS node for FT232H -->
+	<arg name="ns" default="/" doc="Namespace for the device."/>
+	<arg name="test" default="false" doc="Flag to test mode if no hardware is attached."/>
+
+
+	<node name="ft232h_interface" pkg="ft232h_interface" type="ft232h_interface" ns="$(arg ns)" output="screen" args="_test:=$(arg test)">
+		<rosparam command="load" file="$(find ft232h_interface)/config/test.yaml"/>
+	</node>
+	<node name="ftdi_test_node" pkg="ft232h_interface" type ="ftdi_test_node"/>
+</launch>
