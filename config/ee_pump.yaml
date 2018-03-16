@@ -2,6 +2,7 @@ device:
   name: "FT232H"
   serialNo: "RI17034-tty"
   loopRate: 30
+  portTopic: ""
 pins: [
   {
     topic: "/pump",

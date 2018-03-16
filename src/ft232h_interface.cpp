@@ -37,15 +37,11 @@ unsigned char port_dir = 0x00;
 unsigned char buf[1];
 // Number of (used) pins, default to 8
 int pins = 8;
-// int pin_dir[8] = {0,0,0,0,0,0,0,0};
-// int pin_dir[8] = {1,1,1,0,0,0,0,0};   // 0=input, 1=output
 int pin_dir[8] = {1,1,1,1,1,1,1,1};
-// unsigned char pin_no;
 
 
 
 // Subscriber call-back functions
-// void set_pin(const std_msgs::ByteMultiArray::ConstPtr& msg);
 void set_pin(const std_msgs::Bool::ConstPtr& msg, int index);
 void set_pins(const std_msgs::Byte::ConstPtr& msg);
 
@@ -55,16 +51,15 @@ int ftdi_cleanup(void);
 
 
 int main(int argc, char **argv){
-
   // ROS
   ros::init(argc, argv, "ftdi_interface");
   ros::NodeHandle nh("~");
-  // printf("ROS Namespace: %s\n", nh.getNamespace().c_str());
 
   // Check for test mode
   bool testMode = false;
   nh.getParam("test", testMode);
-  if(testMode) printf("Entering test mode.\n");
+  if(testMode) printf("Running in test mode.\n");
+  ToDo: Properly implement test mode
 
   // Get device parameters
   XmlRpc::XmlRpcValue deviceParameters;
@@ -72,7 +67,7 @@ int main(int argc, char **argv){
       ROS_INFO("No device configuration given. Exiting.");
       return 0;
   }
-  printf("Device paramters: %d.\n", deviceParameters.size());
+  printf("Device paramters: %d.\n", deviceParameters.size());   //debug
 
   // Debug output
   std::string deviceName = deviceParameters["name"];
@@ -86,24 +81,27 @@ int main(int argc, char **argv){
 
   // No. of utilized pins
   pins = pinConfig.size();
+
   // Initialize publishers and subscribers; here still unknown how they are split among *pins*
   ros::Publisher pinPub[pins];
   ros::Subscriber pinSub[pins];
-  ros::Publisher portPub = nh.advertise<std_msgs::Byte>("port", 1000);
-  // ToDo: Implement Publisher for whole port, published corresponding byte (std_msgs::Byte message)
-  // Configure pins
+
+  std_msgs::Bool boolMsg;
+  std::string topic;
+  std::string direction;
+  // Configure pins according to pinConfig
   for(int i=0; i<pins; i++){
-    std::string topic = pinConfig[i]["topic"];
-    std::string direction = pinConfig[i]["direction"];
+    topic = pinConfig[i]["topic"];
+    direction = pinConfig[i]["direction"];
 
     printf("\t%s, %s\n", topic.c_str(), direction.c_str());   //debug
 
-    // Output -> subscriber
+    // Pin output -> ROS subscriber
     if(direction == "output"){
       pinSub[i] = nh.subscribe<std_msgs::Bool>(topic, 1000, boost::bind(set_pin, _1, i));
       pin_dir[i] = 1;
     }
-    // Input -> publisher
+    // Pin input -> ROS publisher
     else if(direction == "input"){
       pinPub[i] = nh.advertise<std_msgs::Bool>(topic, 1000);
       pin_dir[i] = 0;
@@ -114,6 +112,14 @@ int main(int argc, char **argv){
       ROS_INFO("Unknown pin direction. Exiting.");
       return 0;
     }
+  }
+
+  // Publisher for whole IO port
+  ros::Publisher portPub;
+  std::string devicePortTopic = deviceParameters["portTopic"];
+  if(devicePortTopic.c_str()){
+    printf("%s\n", devicePortTopic.c_str());
+    portPub = nh.advertise<std_msgs::Byte>(devicePortTopic.c_str(), 1000);
   }
 
   int loopRate = deviceParameters["loopRate"];
@@ -140,23 +146,18 @@ int main(int argc, char **argv){
       return 0;
     }
 
-    std_msgs::Bool msg;
-    // msg.data = buf[0];
     for(int i=0; i<pins; i++){
-      // std::string topic = pinConfig[i]["topic"];
-      std::string direction = pinConfig[i]["direction"];
+      direction = pinConfig[i]["direction"];
       if(direction == "input"){
-        msg.data = (buf[0] & (1 << i));
-        pinPub[i].publish(msg);
+        boolMsg.data = (buf[0] & (1 << i));
+        pinPub[i].publish(boolMsg);
       }
     }
 
-
-    /*
-      (publish whole port)
-    */
-
-
+    // Publish whole IO port (if publisher was set up earlier)
+    std_msgs::Byte byteMsg;
+    byteMsg.data = buf[0];
+    portPub.publish(byteMsg);
 
 
     ros::spinOnce();
