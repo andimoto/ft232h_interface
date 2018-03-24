@@ -27,9 +27,9 @@ char *manufacturer, *description;
 
 int V_ID = 0x0403;
 int P_ID = 0x6014;
-char *SERIAL_NO = NULL;
+// char *SERIAL_NO = NULL;
 int FTDI_CHIP_TYPE = TYPE_232H;
-char *serial_no = NULL;
+const char *serial_no = NULL;
 
 // Buffer for configuring port direction
 unsigned char port_dir = 0x00;
@@ -59,7 +59,7 @@ int main(int argc, char **argv){
   bool testMode = false;
   nh.getParam("test", testMode);
   if(testMode) printf("Running in test mode.\n");
-  ToDo: Properly implement test mode
+  // ToDo: Properly implement test mode
 
   // Get device parameters
   XmlRpc::XmlRpcValue deviceParameters;
@@ -69,10 +69,22 @@ int main(int argc, char **argv){
   }
   printf("Device paramters: %d.\n", deviceParameters.size());   //debug
 
-  // Debug output
+  // Determine serial number to be used
   std::string deviceName = deviceParameters["name"];
   std::string deviceSerialNo = deviceParameters["serialNo"];
-  printf("Looking for device '%s' with serial number '%s'.\n", deviceName.c_str(), deviceSerialNo.c_str());
+  std::string systemSerialNo;
+  nh.getParam("serial_no", systemSerialNo);
+  // Override config file setting if serial number is specified via launch file argument
+  if(systemSerialNo.length() > 0){
+    serial_no = systemSerialNo.c_str();
+    // Debug output
+    printf("Looking for system device '%s' with serial number '%s'.\n", deviceName.c_str(), systemSerialNo.c_str());
+  }
+  else{
+    serial_no = deviceSerialNo.c_str();
+    // Debug output
+    printf("Looking for device '%s' with serial number '%s'.\n", deviceName.c_str(), deviceSerialNo.c_str());
+  }
 
   // Get pin configuration
   XmlRpc::XmlRpcValue pinConfig;
@@ -91,10 +103,10 @@ int main(int argc, char **argv){
   std::string direction;
   // Configure pins according to pinConfig
   for(int i=0; i<pins; i++){
-    topic = pinConfig[i]["topic"];
-    direction = pinConfig[i]["direction"];
+    topic = (std::string)pinConfig[i]["topic"];
+    direction = (std::string)pinConfig[i]["direction"];
 
-    printf("\t%s, %s\n", topic.c_str(), direction.c_str());   //debug
+    printf("\t%s,\t%s\n", topic.c_str(), direction.c_str());   //debug
 
     // Pin output -> ROS subscriber
     if(direction == "output"){
@@ -127,9 +139,11 @@ int main(int argc, char **argv){
   // /ROS
 
 
-  // Setup FT232H, exit if setup fails
-  if(ftdi_setup() < 0) return 0;
-
+  // Setup FT232H, exit if setup fails or no devices are found
+  if(ftdi_setup() == EXIT_FAILURE){
+    printf("FTDI setup failed. Exiting.\n");
+    return 0;
+  }
 
 
   int count = 0;
@@ -147,7 +161,7 @@ int main(int argc, char **argv){
     }
 
     for(int i=0; i<pins; i++){
-      direction = pinConfig[i]["direction"];
+      direction = (std::string)pinConfig[i]["direction"];
       if(direction == "input"){
         boolMsg.data = (buf[0] & (1 << i));
         pinPub[i].publish(boolMsg);
@@ -190,11 +204,18 @@ int ftdi_setup(void){
     ftdi_free(ftdi);
     return EXIT_FAILURE;
   }
-  printf("Discovered %d device(s).\n", ret);
+  else if(ret > 0){
+    printf("Discovered %d device(s).\n", ret);
+  }
+  else{
+    printf("No devices found. Exiting.\n");
+    ftdi_free(ftdi);
+    return EXIT_FAILURE;
+  }
 
   // Open specific device of multiple identical ones (specified by serial number)
-  if ((ret = ftdi_usb_open_desc(ftdi, V_ID, P_ID, 0, SERIAL_NO)) < 0){
-    fprintf(stderr, "unable to open ftdi device: %d (%s)\n", ret, ftdi_get_error_string(ftdi));
+  if ((ret = ftdi_usb_open_desc(ftdi, V_ID, P_ID, 0, serial_no)) < 0){
+    fprintf(stderr, "Unable to open ftdi device: %d (%s)\n", ret, ftdi_get_error_string(ftdi));
     ftdi_free(ftdi);
     return EXIT_FAILURE;
   }
@@ -223,8 +244,10 @@ int ftdi_setup(void){
   printf("Turning everything off\n");
   ret = ftdi_write_data(ftdi, buf, 1);
   if (ret < 0){
-    fprintf(stderr,"write failed for 0x%x, error %d (%s)\n",buf[0],ret, ftdi_get_error_string(ftdi));
+    fprintf(stderr,"Write failed for 0x%x, error %d (%s)\n",buf[0],ret, ftdi_get_error_string(ftdi));
   }
+
+  return EXIT_SUCCESS;
 }
 
 int ftdi_cleanup(void){
@@ -233,14 +256,14 @@ int ftdi_cleanup(void){
   printf("Turning everything off\n");
   ret = ftdi_write_data(ftdi, buf, 1);
   if (ret < 0){
-    fprintf(stderr,"write failed for 0x%x, error %d (%s)\n",buf[0],ret, ftdi_get_error_string(ftdi));
+    fprintf(stderr,"Write failed for 0x%x, error %d (%s)\n",buf[0],ret, ftdi_get_error_string(ftdi));
   }
 
   // Cleanup
   // ftdi_disable_bitbang(ftdi);
   // Close device
   if ((ret = ftdi_usb_close(ftdi)) < 0){
-      fprintf(stderr, "unable to close ftdi device: %d (%s)\n", ret, ftdi_get_error_string(ftdi));
+      fprintf(stderr, "Unable to close ftdi device: %d (%s)\n", ret, ftdi_get_error_string(ftdi));
       ftdi_free(ftdi);
       return EXIT_FAILURE;
   }
