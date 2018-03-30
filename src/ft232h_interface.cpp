@@ -20,7 +20,7 @@ struct ftdi_device_list *devlist, *curdev;
 // char manufacturer[128], description[128];
 int mnf_len, desc_len, serial_len;
 int retval = EXIT_SUCCESS;
-struct ftdi_version_info version;
+// struct ftdi_version_info version;
 
 struct libusb_device *device;
 char *manufacturer, *description;
@@ -194,12 +194,12 @@ int ftdi_setup(void){
   }
 
   // Get version (check if library works)
-  version = ftdi_get_library_version();
-  printf("Initialized libftdi %s (major: %d, minor: %d, micro: %d, snapshot ver: %s)\n",
-      version.version_str, version.major, version.minor, version.micro, version.snapshot_str);
+  // version = ftdi_get_library_version();
+  // printf("Initialized libftdi %s (major: %d, minor: %d, micro: %d, snapshot ver: %s)\n",
+      // version.version_str, version.major, version.minor, version.micro, version.snapshot_str);
 
   // Look for devices
-  if((ret = ftdi_usb_find_all(ftdi, &devlist, 0, 0)) < 0){
+  if((ret = ftdi_usb_find_all(ftdi, &devlist, V_ID, P_ID)) < 0){
     fprintf(stderr, "USB device discovery failed: %d (%s)\n", ret, ftdi_get_error_string(ftdi));
     ftdi_free(ftdi);
     return EXIT_FAILURE;

@@ -20,14 +20,14 @@ catkin_package()
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
-  /usr/include/libftdi1
+  # /usr/include
 )
 
 add_executable(
   ft232h_interface src/ft232h_interface.cpp
 )
 target_link_libraries(
-  ft232h_interface ${catkin_LIBRARIES} ftdi1
+  ft232h_interface ${catkin_LIBRARIES} ftdi
 )
 add_dependencies(
   ft232h_interface
@@ -38,7 +38,7 @@ add_executable(
   ftdi_test_node src/ftdi_test_node.cpp
 )
 target_link_libraries(
-  ftdi_test_node ${catkin_LIBRARIES} ftdi1
+  ftdi_test_node ${catkin_LIBRARIES} ftdi
 )
 add_dependencies(
   ftdi_test_node
